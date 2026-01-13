@@ -15,7 +15,11 @@ class Champion:
         skill:List[Skill]=[]
     ):
         self.name: str = name
-        self.stat: List[int] = stat
+        self.atk = stat[0]
+        self.def = stat[1]
+        self.spa = stat[2]
+        self.spd = stat[3]
+        self.spe = stat[4]
         self.minion_type, self.minion_count = minions
         self.skills = skill
         self.buffs: list[Buff] = []
