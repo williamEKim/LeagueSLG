@@ -6,7 +6,7 @@ class Garen(Champion):
         super().__init__(
             name="Garen",
             stat=[69, 38, 0, 32, 340],
-            minions=("soldier", 0),
+            minions=("melee", 0),
             skill=[
                 GarenQ()
             ]
