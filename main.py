@@ -9,6 +9,12 @@ def printChamp(champ: Champion):
     print(f"\n\tMinion-Type: {mtype}, \n\tMinion-Count:{mcount}\n")
 
 if __name__ == "__main__":
-    Garen = Champion('Garen', [69, 38, 0, 32, 340], ('Meele', 10))
+    Garen = Champion(
+        'Garen', 
+        [69, 38, 0, 32, 340], 
+        [0, 0, 0, 0, 0], 
+        1, 
+        ('Meele', 10)
+    )
     printChamp(Garen)
     
