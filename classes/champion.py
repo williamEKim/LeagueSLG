@@ -9,14 +9,14 @@ import time
 
 
 class Champion:
-    def __init__(
+    def __init__( 
         self, 
         name:str='', 
         base_stat:List[int] | None = None,
         stat_growth:List[float] | None = None,
         level:int=1,
         minions:tuple[str, int]=('',0),
-        skills:List[Skill]=[] | None = None
+        skills:List[Skill]=[] | None = None 
     ):
         self.name: str = name
         self.base_stat = base_stat or [0,0,0,0,0]
