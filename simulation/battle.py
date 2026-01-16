@@ -1,5 +1,6 @@
 from typing import List
 from classes.champion import Champion
+from classes.skill import Skill
 
 
 class Battle:
@@ -37,6 +38,11 @@ class Battle:
         if not actor.is_alive():
             return
 
+        skill=actor.roll_skills()
+
+        if skill:
+            self._use_skill(actor, target, skill)
+
         self._basic_attack(actor, target)
 
         actor.on_turn_end()
@@ -45,6 +51,18 @@ class Battle:
     # ------------------------
     # Action
     # ------------------------
+    def _use_skill(self, attacker: Champion, defender: Champion, skill: skill):
+        self._log(
+            f"{attacker.name} uses {skill.name}!"
+        )
+
+        skill.cast(self,attacker,defender)
+
+        self._log(
+            f"→ {damage} damage "
+            f"(HP: {defender.current_hp})"
+        )
+        
     def _basic_attack(self, attacker: Champion, defender: Champion):
         damage = max(
             0,
