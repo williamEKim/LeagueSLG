@@ -1,8 +1,17 @@
 from abc import ABC, abstractmethod
+import random
 
 class Skill(ABC):
-    def __init__(self, name: str):
+    def __init__(self, name: str, probability: float):
         self.name = name
+        self.prob = probability
+
+    def can_use(self, caster) -> bool:
+        #cc기 등
+        return True
+
+    def roll(self) -> bool:
+        return random.random() < self.prob
 
     @abstractmethod
     def cast(self, caster, target=None):
