@@ -27,6 +27,9 @@ class Battle:
             self.turn += 1
 
         self._finish()
+    
+    def _both_alive(self, left:Champoin, right:Champion) -> bool:
+        return left.is_alive() and right.is_alive()
 
     # ------------------------
     # Turn
@@ -59,14 +62,14 @@ class Battle:
         skill.cast(self,attacker,defender)
 
         self._log(
-            f"→ {damage} damage "
-            f"(HP: {defender.current_hp})"
+            #f"→ {skill.damage} damage "  --> this one need to be done with cast() method
+            f"(HP: {defender.getStat('HP')})"
         )
         
     def _basic_attack(self, attacker: Champion, defender: Champion):
         damage = max(
             0,
-            attacker.stats.atk - defender.stats.def_
+            attacker.getStat('ATK') - defender.getStat('DEF')
         )
 
         defender.take_damage(damage)
@@ -76,6 +79,7 @@ class Battle:
             f"→ {damage} damage "
             f"(HP: {defender.current_hp})"
         )
+    
 
     # ------------------------
     # Finish
