@@ -61,6 +61,7 @@ class Champion:
             "SPD": final[4],
         }
 
+    # 스킬의 발동확률
     def roll_skills(self) -> Skill:
         for skill in self.skills:
             if not skill.can_use(self):
