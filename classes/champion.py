@@ -61,15 +61,13 @@ class Champion:
             "SPD": final[4],
         }
 
-    def roll_skills(self):
+    def roll_skills(self) -> Skill:
         for skill in self.skills:
             if not skill.can_use(self):
                 continue
     
             if skill.roll(self):
                 return skill
-
-        retrun None
 
 
 
