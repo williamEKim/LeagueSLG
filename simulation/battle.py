@@ -82,3 +82,10 @@ class Battle:
     # ------------------------
     def _finish(self):
         winner = self.left
+
+    # ------------------------
+    # Log
+    # ------------------------
+    def _log(self, msg: str):
+        print(msg)
+    
