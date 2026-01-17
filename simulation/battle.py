@@ -51,7 +51,7 @@ class Battle:
     # ------------------------
     # Action
     # ------------------------
-    def _use_skill(self, attacker: Champion, defender: Champion, skill: skill):
+    def _use_skill(self, attacker: Champion, defender: Champion, skill: Skill):
         self._log(
             f"{attacker.name} uses {skill.name}!"
         )
