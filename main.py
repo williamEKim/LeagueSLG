@@ -17,4 +17,8 @@ if __name__ == "__main__":
         ('Meele', 10)
     )
     printChamp(Garen)
+
+    print(f"Test 1: Garen Takes 100 Damage\n\tremaining health = {Garen._take_damage(100.0)}")
+    printChamp(Garen)
+    
     

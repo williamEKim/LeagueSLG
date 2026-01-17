@@ -121,8 +121,11 @@ class Champion:
     def is_alive(self) -> bool:
         return self.hp > 0
 
-
-    # anything (for merge conflict)
+    # hiddlen helpers
+    #   it calculates the hp after damage taken and returns the remaining health
+    def _take_damage(self, damage:float) -> float:
+        self.hp = self.hp - damage
+        return self.hp
 
     # main engine (run every frame/tick)
     def update(self):
