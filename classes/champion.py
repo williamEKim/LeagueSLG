@@ -24,12 +24,15 @@ class Champion:
         self.stat_growth = stat_growth or [0,0,0,0,0,0]
         self.level = level
         self.minion_type, self.minion_count = minions
-        self.skill = skills or []
+        self.skills = skills or []
         self.buffs: list[Buff] = []
-        
 
         self.recalculate_stats()
-        self.hp: float = self.getStat('HP') or 0.0
+
+        self.max_hp = base_stat[0]
+        self.current_hp = self.max_hp
+
+
         
 
     # I would rather add here if it keep gets the error
@@ -47,8 +50,8 @@ class Champion:
         #버프로 인한 스탯변화 순서대로 적용
 
         for buff in buffs:
-                if buff.is_expired():
-                    continue
+            if buff.is_expired():
+                continue
             result = buff.apply_stats(result)
 
         return result
@@ -80,6 +83,10 @@ class Champion:
             if skill.roll(self):
                 return skill
 
+    def take_damage(self, amount: float):
+        self.current_hp = max(0, self.current_hp - amount)
+        return self.current_hp
+
 
 
     # returns the name of champion
@@ -95,7 +102,7 @@ class Champion:
         return self.stat[name.upper()]
     
     def getCurrHealth(self) -> float:
-        return self.hp
+        return self.current_hp
 
     # in-game logic methods (CC is part of Buff -- subset)
     def addBuff(self, buff_type:str, duration:float):
@@ -126,7 +133,7 @@ class Champion:
         )
     
     def is_alive(self) -> bool:
-        return self.hp > 0
+        return self.current_hp > 0
 
     # hiddlen helpers
     #   it calculates the hp after damage taken and returns the remaining health
@@ -142,3 +149,10 @@ class Champion:
     #     self.buffs = [buff for buff in self.buffs if not buff.is_expired()]
     #     if len(self.buffs) != before:
     #         self.recalculate_stats()
+
+    #Battle._process_turn()에는 있는데 champion class에 없어서 오류 발생 방지
+    def on_turn_start(self):
+        pass
+
+    def on_turn_end(self):
+        pass

@@ -7,12 +7,8 @@ class Battle:
     def __init__(self, left: Champion, right: Champion):
         self.left = left
         self.right = right
-        self.turn: int = 1
-        self.log: List[str] = []
+        self.turn = 1
 
-    # ------------------------
-    # Battle lifecycle
-    # ------------------------
     def start(self):
         self._log(f"Battle Start: {self.left.name} vs {self.right.name}")
 
@@ -27,13 +23,10 @@ class Battle:
             self.turn += 1
 
         self._finish()
-    
-    def _both_alive(self, left:Champoin, right:Champion) -> bool:
-        return left.is_alive() and right.is_alive()
 
-    # ------------------------
-    # Turn
-    # ------------------------
+    def _both_alive(self) -> bool:
+        return self.left.is_alive() and self.right.is_alive()
+
     def _process_turn(self, actor: Champion, target: Champion):
         self._log(f"{actor.name}'s turn")
 
@@ -41,8 +34,7 @@ class Battle:
         if not actor.is_alive():
             return
 
-        skill=actor.roll_skills()
-
+        skill = actor.roll_skills()
         if skill:
             self._use_skill(actor, target, skill)
 
@@ -51,27 +43,13 @@ class Battle:
         actor.on_turn_end()
         target.on_turn_end()
 
-    # ------------------------
-    # Action
-    # ------------------------
     def _use_skill(self, attacker: Champion, defender: Champion, skill: Skill):
-        self._log(
-            f"{attacker.name} uses {skill.name}!"
-        )
+        self._log(f"{attacker.name} uses {skill.name}!")
+        skill.cast(self, attacker, defender)
+        self._log(f"(HP: {defender.current_hp})")
 
-        skill.cast(self,attacker,defender)
-
-        self._log(
-            #f"→ {skill.damage} damage "  --> this one need to be done with cast() method
-            f"(HP: {defender.getStat('HP')})"
-        )
-        
     def _basic_attack(self, attacker: Champion, defender: Champion):
-        damage = max(
-            0,
-            attacker.getStat('ATK') - defender.getStat('DEF')
-        )
-
+        damage = max(0, attacker.getStat('ATK') - defender.getStat('DEF'))
         defender.take_damage(damage)
 
         self._log(
@@ -79,17 +57,12 @@ class Battle:
             f"→ {damage} damage "
             f"(HP: {defender.current_hp})"
         )
-    
 
-    # ------------------------
-    # Finish
-    # ------------------------
+        
+
     def _finish(self):
-        winner = self.left
+        winner = self.left if self.left.is_alive() else self.right
+        self._log(f"\nWinner: {winner.name}")
 
-    # ------------------------
-    # Log
-    # ------------------------
     def _log(self, msg: str):
         print(msg)
-    
