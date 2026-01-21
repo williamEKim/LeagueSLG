@@ -1,5 +1,6 @@
 from classes.champion import Champion
-from utils.stats import Stats
+from simulation.battle import Battle
+from instance.champion_factory import create_champion
 
 def printChamp(champ: Champion):
     print(f"\nWe have champion \"{champ.getName()}\":")
@@ -9,16 +10,20 @@ def printChamp(champ: Champion):
     print(f"\n\tMinion-Type: {mtype}, \n\tMinion-Count:{mcount}\n")
 
 if __name__ == "__main__":
-    Garen = Champion(
-        'Garen', 
-        [690, 69, 38, 0, 32, 340], 
-        [0, 0, 0, 0, 0, 0], 
-        1, 
-        ('Meele', 10)
-    )
+    Garen = create_champion("Garen")
+    Darius = create_champion("Darius")
+    Khazix = create_champion("Khazix")
     printChamp(Garen)
+    printChamp(Darius)
+    printChamp(Khazix)
 
-    print(f"Test 1: Garen Takes 100 Damage\n\tremaining health = {Garen._take_damage(100.0)}")
-    printChamp(Garen)
+    battle1 = Battle(Garen, Darius)
+    battle1.start()
+
+    Garen.reset_status()
+    Darius.reset_status()
+
+    battle2 = Battle(Garen, Khazix)
+    battle2.start()
     
     
