@@ -1,6 +1,7 @@
 import json
+import importlib
 from classes.champion import Champion
-#from instance.skill_factory import create_skill
+from instance.skill_factory import create_skill
 
 _CHAMPION_DATA = None
 
@@ -20,13 +21,29 @@ def create_champion(champion_id: str) -> Champion:
         raise ValueError(f"Champion '{champion_id}' not found")
 
     c = data[champion_id]
+    skills = [create_skill(sid) for sid in c.get("skills", [])]
 
-    #skills = [create_skill(sid) for sid in c["skills"]]
+    # Try to load custom logic from instance/champion/{champion_id}.py
+    try:
+        module_name = f"instance.champion.{champion_id}"
+        module = importlib.import_module(module_name)
+        
+        if hasattr(module, champion_id):
+            champion_class = getattr(module, champion_id)
+            return champion_class(
+                name=c["name"],
+                base_stat=c["base_stat"],
+                stat_growth=c["stat_growth"],
+                skills=skills,
+                minions=tuple(c["minions"]) if c.get("minions") else None
+            )
+    except (ImportError, AttributeError):
+        pass
 
     return Champion(
         name=c["name"],
         base_stat=c["base_stat"],
         stat_growth=c["stat_growth"],
-        #skills=skills,
-        minions=tuple(c["minions"]) if c["minions"] else None
+        skills=skills,
+        minions=tuple(c["minions"]) if c.get("minions") else None
     )
