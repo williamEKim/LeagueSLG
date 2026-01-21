@@ -23,6 +23,9 @@ class Champion:
         self.minion_type, self.minion_count = minions
         self.skills = skills or []
         self.buffs: list[Buff] = []
+        # 장착 아이템 목록 (최대 3개)
+        self.items: list = []
+        self.MAX_ITEMS = 3
 
         # 초기 능력치 계산
         self.recalculate_stats()
@@ -37,6 +40,7 @@ class Champion:
         """
         self.current_hp = self.max_hp
         self.buffs = []
+        # 아이템은 기본적으로 유지한다. 필요 시 아이템 제거 로직을 호출하세요.
         self.recalculate_stats()
 
     def calculate_stats(self, base_stat, stat_growth, level):
@@ -161,3 +165,80 @@ class Champion:
         for buff in self.buffs:
             buff.tick()
         self.update()
+
+    # -----------------------
+    # Item management methods
+    # -----------------------
+    def equip_item(self, item):
+        """
+        아이템을 장착: 최대 `MAX_ITEMS` 까지 허용.
+        - item은 객체 또는 문자열(item_id)를 허용합니다.
+        - 객체인 경우 해당 객체의 `apply_on_equip(self)`를 호출합니다.
+        """
+        # lazy import to avoid circular dependency
+        from instance import item_factory
+
+        # item_id 문자열이 주어지면 객체로 변환
+        if isinstance(item, str):
+            item = item_factory.create_item(item)
+
+        if len(self.items) >= self.MAX_ITEMS:
+            raise ValueError(f"Cannot equip more than {self.MAX_ITEMS} items")
+
+        # 장착 전 행동(아이템이 제공하는 stat 보정 등 적용)
+        try:
+            item.apply_on_equip(self)
+        except Exception:
+            # 아이템이 해당 메서드를 구현하지 않으면 무시
+            pass
+
+        self.items.append(item)
+        # 능력치 재계산
+        try:
+            self.recalculate_stats()
+        except Exception:
+            pass
+
+        return True
+
+    def unequip_item(self, item_identifier):
+        """
+        아이템 해제: item_identifier는 item 객체, item id(str), 또는 인덱스(int)를 허용.
+        제거 시 item.remove_on_unequip(self) 를 호출합니다(구현되어 있다면).
+        """
+        target = None
+        # 찾기: 객체
+        if item_identifier in self.items:
+            target = item_identifier
+        else:
+            # 문자열 id로 매칭
+            if isinstance(item_identifier, str):
+                for it in self.items:
+                    if getattr(it, "id", None) == item_identifier or getattr(it, "name", None) == item_identifier:
+                        target = it
+                        break
+            # 인덱스로 접근
+            if target is None and isinstance(item_identifier, int):
+                if 0 <= item_identifier < len(self.items):
+                    target = self.items[item_identifier]
+
+        if target is None:
+            raise ValueError("Item to unequip not found")
+
+        # 제거 전 아이템 역효과
+        try:
+            target.remove_on_unequip(self)
+        except Exception:
+            pass
+
+        self.items = [it for it in self.items if it is not target]
+        try:
+            self.recalculate_stats()
+        except Exception:
+            pass
+
+        return True
+
+    def get_items(self):
+        """현재 장착된 아이템 리스트 반환"""
+        return list(self.items)
