@@ -13,7 +13,7 @@ def _load_item_data():
     global _ITEM_DATA
     if _ITEM_DATA is None:
         try:
-            with open("instance/items.json", "r", encoding="utf-8") as f:
+            with open("data/items.json", "r", encoding="utf-8") as f:
                 _ITEM_DATA = json.load(f)
         except FileNotFoundError:
             _ITEM_DATA = {}

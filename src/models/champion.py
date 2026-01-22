@@ -1,6 +1,6 @@
 from typing import List
-from classes.skill import Skill
-from classes.buff import Buff
+from src.models.skill import Skill
+from src.models.buff import Buff
 
 class Champion:
     """
@@ -12,6 +12,7 @@ class Champion:
             base_stat: List[int] = [],
             stat_growth: List[float] = [],
             level: int = 1,
+            exp: int = 0,
             minions: tuple[str, int] = ('', 0),
             skills: List[Skill] = [] 
     ):
@@ -20,6 +21,7 @@ class Champion:
         self.base_stat = base_stat or [0, 0, 0, 0, 0, 0]
         self.stat_growth = stat_growth or [0, 0, 0, 0, 0, 0]
         self.level = level
+        self.exp = exp
         self.minion_type, self.minion_count = minions
         self.skills = skills or []
         self.buffs: list[Buff] = []
@@ -166,17 +168,39 @@ class Champion:
             buff.tick()
         self.update()
 
+    def gain_exp(self, amount: int):
+        """경험치를 획득하고 필요 시 레벨업 수행"""
+        self.exp += amount
+        print(f"[{self.name}] {amount} 경험치 획득! (현재: {self.exp})")
+        
+        while self.exp >= self.get_required_exp():
+            self.level_up()
+
+    def get_required_exp(self) -> int:
+        """현재 레벨에서 다음 레벨로 가기 위해 필요한 경험치 (공식: level * level * 100)"""
+        return self.level * self.level * 100
+
+    def level_up(self):
+        """레벨업 처리 및 능력치 재계산"""
+        self.exp -= self.get_required_exp()
+        self.level += 1
+        print(f"[{self.name}] 레벨업! {self.level-1} -> {self.level}")
+        self.recalculate_stats()
+        # 레벨업 시 HP 완전 회복
+        self.max_hp = self.stat["HP"]
+        self.current_hp = self.max_hp
+
     # -----------------------
     # Item management methods
     # -----------------------
     def equip_item(self, item):
         """
         아이템을 장착: 최대 `MAX_ITEMS` 까지 허용.
-        - item은 객체 또는 문자열(item_id)를 허용합니다.
-        - 객체인 경우 해당 객체의 `apply_on_equip(self)`를 호출합니다.
+        - item은 객체 또는 문자열(item_id)를 허용.
+        - 객체인 경우 해당 객체의 `apply_on_equip(self)`를 호출.
         """
         # lazy import to avoid circular dependency
-        from instance import item_factory
+        from src.factories import item_factory
 
         # item_id 문자열이 주어지면 객체로 변환
         if isinstance(item, str):
