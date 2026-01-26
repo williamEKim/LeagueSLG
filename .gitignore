@@ -2,4 +2,5 @@ __pycache__
 
 # Agent configuration and documentation
 .agent/workflows/
+.agent/skills/
 FOR*.md
