@@ -36,14 +36,17 @@ LeagueSLG/
 ### 1. 백엔드 설정 및 실행
 
 ```bash
-# 의존성 설치
+# 의존성 설치 (Mac OS)
 pip install -r requirements.txt
 
-# 또는 (Windows)
+# 서버 실행 (Mac OS)
+python -m src.api.server
+
+# 의존성 설치 (Windows)
 py -m pip install -r requirements.txt
 
-# 서버 실행
-py src/api/server.py
+# 서버 실행 (Windows)
+py -m src.api.server
 ```
 
 서버가 `http://localhost:8000`에서 실행됩니다.
@@ -141,14 +144,26 @@ flutter run -d windows
 ### 백엔드 개발
 
 ```bash
+### Windows 기준
 # 전투 시뮬레이션 테스트
-py main.py
+py -m main
 
 # 맵 점령 데모
-py map_demo.py
+py -m map_demo
 
 # 데이터베이스 초기화
-py src/init_db.py
+py -m src.init_db
+
+
+### MAC OS 기준
+# 전투 시뮬레이션 테스트
+python -m main
+
+# 맵 점령 데모
+python -m map_demo
+
+# 데이터베이스 초기화
+python -m src.init_db
 ```
 
 ### API 테스트
@@ -285,3 +300,4 @@ static const String apiBaseUrl = 'http://your-server:port';
 ---
 
 **Enjoy the game! ⚔️**
+
