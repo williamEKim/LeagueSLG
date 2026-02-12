@@ -17,6 +17,11 @@ class MapManager:
         self.armies: Dict[str, Army] = {}
         self.battle_logs: Dict[str, List[dict]] = {}  # {user_id: [battle_result_dict]}
 
+    def get_user_armies(self, user_id: str) -> List[Army]:
+        """특정 유저의 소유 부대 목록 반환"""
+        return [army for army in self.armies.values() if str(army.owner_id) == str(user_id)]
+
+
 
     def create_army(self, user_id: str, champions: List[Champion]) -> Army:
         """최대 3명의 챔피언으로 부대 생성"""
@@ -87,12 +92,19 @@ class MapManager:
             # 수비군 생성: 타일 레벨에 따라 1~3명
             npc_count = min(3, max(1, tile.level // 2))  # Lv1-2: 1명, Lv3-4: 2명, Lv5+: 3명
             npc_team = []
+            
+            # 반군/악역 컨셉의 영웅 풀
+            rebel_pool = ["견훤", "궁예", "신검", "비담", "이차돈"]
+            
+            import random
             for i in range(npc_count):
-                npc_champ = create_champion("Darius")
+                # 랜덤하게 수비 대장 선정
+                npc_key = random.choice(rebel_pool)
+                npc_champ = create_champion(npc_key)
                 npc_champ.level = tile.level
                 npc_champ.recalculate_stats()
                 npc_champ.reset_status()
-                npc_champ.name = f"수비군{i+1} (Lv.{tile.level})"
+                npc_champ.name = f"수비대장 {npc_key} (Lv.{tile.level})"
                 npc_team.append(npc_champ)
             
             # NPC 병종 랜덤 선택
@@ -144,7 +156,37 @@ class MapManager:
             # 이미 내 땅이거나 빈 땅
             self._stay_at_tile(army, tile, x, y)
 
+        # 전투 종료 후 상태 저장 (HP 등)
+        self._save_army_status(army)
+
         march.status = MarchStatus.COMPLETED
+
+    def _save_army_status(self, army: Army):
+        """부대 상태(HP)를 DB에 저장"""
+        from src.common.database import SessionLocal
+        from src.models.user_champion import UserChampion
+        
+        # NPC 부대는 저장 안 함
+        if not army.owner_id or army.id.startswith("npc"):
+            return
+
+        db = SessionLocal()
+        try:
+            for champ in army.champions:
+                if champ.db_id:
+                    # 현재 체력 저장 (음수 방지)
+                    current_hp = max(0, int(champ.current_hp))
+                    
+                    # DB 업데이트
+                    db.query(UserChampion).filter(UserChampion.id == champ.db_id).update(
+                        {"current_hp": current_hp}
+                    )
+            db.commit()
+            print(f"💾 [{army.owner_id}] 부대 HP 저장 완료")
+        except Exception as e:
+            print(f"Error saving army status: {e}")
+        finally:
+            db.close()
 
     def get_pending_battles(self, user_id: str) -> List[dict]:
         """유저의 확인하지 않은 전투 기록 반환 후 삭제"""
@@ -160,3 +202,74 @@ class MapManager:
         army.set_position(x, y)
         army.status = "STATIONED"
         print(f"[{army.owner_id}] 부대가 ({x}, {y})에 주둔합니다.")
+
+    def deploy_army_from_db(self, user_id: str, slot_index: int, db_session=None) -> Optional[Army]:
+        """
+        DB에 저장된 부대 구성을 읽어 게임 로직용 Army 객체를 생성합니다.
+        
+        Args:
+            user_id: 유저 식별자 (DB의 user.id)
+            slot_index: 부대 슬롯 번호 (0~4)
+            db_session: SQLAlchemy Session (없으면 새로 생성)
+            
+        Returns:
+            생성된 Army 객체 또는 None (부대가 비어있는 경우)
+        """
+        from src.common.database import SessionLocal
+        from src.models.army_model import ArmyDb
+        from src.models.user_champion import UserChampion
+        
+        db = db_session or SessionLocal()
+        close_db = db_session is None  # 외부에서 세션을 받은 경우 닫지 않음
+        
+        try:
+            # 1. DB에서 부대 조회
+            army_db = db.query(ArmyDb).filter(
+                ArmyDb.user_id == user_id,
+                ArmyDb.slot_index == slot_index
+            ).first()
+            
+            if not army_db:
+                print(f"[경고] 유저 {user_id}의 {slot_index}번 부대가 존재하지 않습니다.")
+                return None
+            
+            # 2. 배치된 챔피언 조회
+            user_champions = db.query(UserChampion).filter(
+                UserChampion.army_db_id == army_db.id
+            ).all()
+            
+            if not user_champions:
+                print(f"[경고] 유저 {user_id}의 {slot_index}번 부대에 챔피언이 없습니다.")
+                return None
+            
+            # 3. 게임 로직 Champion 객체 생성
+            champion_objects = []
+            for uc in user_champions:
+                champ = create_champion(uc.champion_key)
+                champ.db_id = uc.id # DB ID 연동 중요!
+                champ.level = uc.level
+                champ.exp = uc.exp
+                champ.recalculate_stats()
+                
+                # DB에 저장된 체력 불러오기
+                # (기본값인 경우 Max HP로 초기화해주기 위해 체크)
+                if uc.current_hp is not None:
+                    champ.current_hp = uc.current_hp
+                else:
+                    champ.current_hp = champ.max_hp
+                
+                # 부상병(0병력)은 출전 불가? 아니면 0으로 출전?
+                # 일단 0으로 출전하면 바로 죽음 처리되므로 허용.
+                
+                champion_objects.append(champ)
+            
+            # 4. Army 객체 생성
+            army = self.create_army(str(user_id), champion_objects)
+            army.unit_type = army_db.unit_type
+            
+            print(f"✅ 유저 {user_id}의 {slot_index}번 부대 배치 완료: {army}")
+            return army
+            
+        finally:
+            if close_db:
+                db.close()

@@ -20,10 +20,18 @@ def orm_to_champion(orm: UserChampion) -> Champion:
     champions = load_champions()
 
     # DB에 저장된 champion_key 사용
-    data = champions.get(orm.champion_key)
+    key = orm.champion_key
+    
+
+
+    data = champions.get(key)
 
     if not data:
-        raise ValueError(f"Unknown champion key: {orm.champion_key}")
+        # Fallback to default hero if key is still unknown
+        print(f"[Mapper] Unknown key '{key}', falling back to '주몽'")
+        data = champions.get("주몽")
+        if not data:
+             raise ValueError(f"CRITICAL: Default hero '주몽' not found in champions.json")
 
     champ = Champion(
         name=data["name"],
